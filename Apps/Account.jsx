@@ -21,7 +21,7 @@ const Account = () => {
 
 
   const handleLogout = async () => {
-    await EncryptedStorage.removeItem('access_token');
+    //await EncryptedStorage.removeItem('access_token');
     navigation.navigate('Login');
   };
   

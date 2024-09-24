@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore for token storage
 
 const Login = () => {
   const navigation = useNavigation();
@@ -21,12 +22,12 @@ const Login = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ email }) // Adjust according to your server's requirements
+          body: JSON.stringify({ email })
         });
-  
-        const responseText = await response.text(); // Read the response text and store it
+
+        const responseText = await response.text();
         try {
-          const data = JSON.parse(responseText); // Try parsing the stored response text
+          const data = JSON.parse(responseText);
           if (response.ok) {
             setCodeSent(true);
             Alert.alert('Verification', 'A verification code has been sent to your email.');
@@ -45,8 +46,6 @@ const Login = () => {
       Alert.alert('Invalid Email', 'Please enter your student ID before the domain.');
     }
   };
-  
-  
 
   const verifyCode = async () => {
     const email = `${emailPrefix}@student.uts.edu.au`;
@@ -56,22 +55,23 @@ const Login = () => {
     try {
       const response = await fetch('http://localhost:3000/login/verify', {
         method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, verificationCode,password }) // Adjust according to your server's requirements
-        });
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, verificationCode, password })
+      });
       const data = await response.text();
-      // const header = await response.headers();
-      // const data = await response.json();
-      // console.log(header);
+
       if (response.ok) {
+        const token = response.headers.get('authorization').split(' ')[1];
+
+        // Store token securely using SecureStore
+        await SecureStore.setItemAsync('access_token', token);
+
         Alert.alert('Verification Success', 'You have been successfully logged in!');
         navigation.navigate('Main');
       } else {
-        // Alert.alert('Verification Error', data.message || 'Invalid verification code, please try again.');
         Alert.alert('Invalid verification code, please try again.');
-
       }
     } catch (error) {
       console.error('Error verifying code:', error);
@@ -86,10 +86,15 @@ const Login = () => {
     }
   };
 
-  const main =() =>{
+  const main = () => {
     navigation.navigate('Main');
   };
-  
+
+  const goBackToEmailInput = () => {
+    setCodeSent(false); // Reset the state to show the email input screen again
+    setCode(new Array(6).fill('')); // Clear the code input field
+  };
+
   return (
     <LinearGradient
       colors={['#2b189e', '#5d4add', '#a38ef9']}
@@ -121,6 +126,9 @@ const Login = () => {
         </View>
       ) : (
         <>
+        <TouchableOpacity style={styles.button} onPress={goBackToEmailInput}>
+        <Text style={styles.buttonText}>Back</Text>
+      </TouchableOpacity>
           <View style={styles.codeContainer}>
             {code.map((_, index) => (
               <TextInput
@@ -139,11 +147,10 @@ const Login = () => {
           </TouchableOpacity>
         </>
       )}
-      <TouchableOpacity style={styles.button} onPress={main}>
-            <Text style={styles.buttonText}>Test login</Text>
-          </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={goBackToEmailInput}>
+        <Text style={styles.buttonText}>Test login</Text>
+      </TouchableOpacity>
     </LinearGradient>
-    
   );
 };
 
@@ -171,10 +178,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
-  },
-  inputLabel: {
-    fontWeight: 'bold',
-    marginBottom: 5,
   },
   input: {
     flex: 1,
