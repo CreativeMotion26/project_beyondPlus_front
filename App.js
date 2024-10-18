@@ -15,14 +15,14 @@ import Post from './Apps/Post'
 import PostDetails from './Apps/PostDetails';
 import Community from './Apps/Community';
 import { useEffect } from 'react';
-
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore for token access
 
 const Stack = createStackNavigator();
 
-const App = () => {
+const App = ({ navigation }) => {
   const checkAutoLogin = async () => {
-    const token = await EncryptedStorage.getItem('access_token');
-  
+    const token = await SecureStore.getItemAsync('access_token');
+
     if (token) {
       try {
         const response = await fetch('http://localhost:3000/login/verify-token', {
@@ -32,11 +32,11 @@ const App = () => {
             'Content-Type': 'application/json'
           }
         });
-  
+
         if (response.ok) {
-          navigation.navigate('Main'); // If token is valid, skip login
+          navigation.navigate('Main'); // Token valid, go to main screen
         } else {
-          navigation.navigate('Login'); // If token is invalid, show login
+          navigation.navigate('Login'); // Token invalid, show login
         }
       } catch (error) {
         console.error('Error verifying token:', error);
@@ -46,7 +46,7 @@ const App = () => {
       navigation.navigate('Login'); // No token, show login
     }
   };
-  
+
   useEffect(() => {
     checkAutoLogin();
   }, []);

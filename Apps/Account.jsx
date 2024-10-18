@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import * as SecureStore from 'expo-secure-store';
 
 const Account = () => {
   const navigation = useNavigation();
@@ -21,7 +22,7 @@ const Account = () => {
 
 
   const handleLogout = async () => {
-    //await EncryptedStorage.removeItem('access_token');
+    await SecureStore.deleteItemAsync('access_token');
     navigation.navigate('Login');
   };
   

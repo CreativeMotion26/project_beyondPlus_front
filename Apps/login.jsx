@@ -79,6 +79,42 @@ const Login = () => {
     }
   };
 
+  const directLogin = async () => {
+    const email = `${emailPrefix}@student.uts.edu.au`;
+    const password = "1234"; // Change this to collect a password input if needed
+  
+    try {
+      const response = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        const token = response.headers.get('authorization').split(' ')[1];
+        console.log(token)
+        
+        
+
+        // Store the token securely using SecureStore
+        await SecureStore.setItemAsync('access_token', token);
+
+  
+        Alert.alert('Login Successful', 'You have been successfully logged in!');
+        navigation.navigate('Main');
+      } else {
+        Alert.alert('Error', data.message || 'Failed to login. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during direct login:', error);
+      Alert.alert('Error', 'Failed to connect to the server');
+    }
+  };
+
   const focusNext = (index, value) => {
     setCode(code.map((c, i) => (i === index ? value : c)));
     if (index < 5 && value) {
@@ -86,13 +122,10 @@ const Login = () => {
     }
   };
 
-  const main = () => {
-    navigation.navigate('Main');
-  };
 
   const goBackToEmailInput = () => {
-    setCodeSent(false); // Reset the state to show the email input screen again
-    setCode(new Array(6).fill('')); // Clear the code input field
+    setCodeSent(false);
+    setCode(new Array(6).fill('')); 
   };
 
   return (
@@ -101,14 +134,13 @@ const Login = () => {
       style={styles.container}
     >
       <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/logo.png')}
-          style={styles.logo}
-        />
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
       </View>
 
       {!codeSent ? (
-        <View style={styles.inputContainer}>
+        <View style={styles.inputBoxContainer}>
+          <Text style={styles.titleText}>Verification</Text>
+          <Text style={styles.descriptionText}>Please, enter your phone and we will create an account for you</Text>
           <View style={styles.emailInputContainer}>
             <TextInput
               placeholder="Student ID"
@@ -120,15 +152,17 @@ const Login = () => {
             />
             <Text style={styles.domainText}>@student.uts.edu.au</Text>
           </View>
-          <TouchableOpacity style={styles.button} onPress={sendVerificationCode}>
-            <Text style={styles.buttonText}>Send Verification Code</Text>
+          <TouchableOpacity style={styles.applyButton} onPress={sendVerificationCode}>
+            <Text style={styles.applyButtonText}>Apply</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.loginButton} onPress={directLogin}>
+            <Text style={styles.applyButtonText}>Login</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <>
-        <TouchableOpacity style={styles.button} onPress={goBackToEmailInput}>
-        <Text style={styles.buttonText}>Back</Text>
-      </TouchableOpacity>
+        <View style={styles.inputBoxContainer}>
+          <Text style={styles.titleText}>Verification</Text>
+          <Text style={styles.descriptionText}>Please, enter the code from the email we sent you</Text>
           <View style={styles.codeContainer}>
             {code.map((_, index) => (
               <TextInput
@@ -142,14 +176,17 @@ const Login = () => {
               />
             ))}
           </View>
-          <TouchableOpacity style={styles.button} onPress={verifyCode}>
-            <Text style={styles.buttonText}>Verify Code</Text>
+          <TouchableOpacity style={styles.applyButton} onPress={verifyCode}>
+            <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
-        </>
+          <TouchableOpacity style={styles.sendNewCodeButton} onPress={sendVerificationCode}>
+            <Text style={styles.sendNewCodeButtonText}>Send new code</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.goBackButton} onPress={goBackToEmailInput}>
+            <Text style={styles.goBackButtonText}>Back</Text>
+          </TouchableOpacity>
+        </View>
       )}
-      <TouchableOpacity style={styles.button} onPress={goBackToEmailInput}>
-        <Text style={styles.buttonText}>Test login</Text>
-      </TouchableOpacity>
     </LinearGradient>
   );
 };
@@ -168,28 +205,51 @@ const styles = StyleSheet.create({
     width: 180,
     height: 110,
   },
-  inputContainer: {
-    width: '90%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  inputBoxContainer: {
+    backgroundColor: '#faf6ff',
     padding: 20,
-    borderRadius: 8,
+    borderRadius: 25,
+    width: '80%',
+    height: '42%',
+    alignItems: 'center',
+    elevation: 5, // For shadow on Android
+    shadowColor: '#000',
+    shadowOffset: { width: 3, height: 7 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5, // For shadow on iOS
+    marginBottom: 20,
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    marginTop: 10,
+    color: '#7B68EE',
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 35,
   },
   emailInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 30,
+    paddingHorizontal: 10,
+    backgroundColor: '#f7f7f7',
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
     padding: 10,
-    marginRight: 10,
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
   },
   domainText: {
     fontSize: 16,
+    color: '#7B68EE'
   },
   codeContainer: {
     flexDirection: 'row',
@@ -198,26 +258,59 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     width: 40,
-    height: 60,
+    height: 50,
     borderWidth: 1,
     borderColor: '#ccc',
-    backgroundColor: 'white',
     textAlign: 'center',
     fontSize: 24,
-    marginRight: 6,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: '#f7f7f7',
   },
-  button: {
+  applyButton: {
     backgroundColor: '#7B68EE',
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 12,
+    width: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
   },
-  buttonText: {
+  loginButton: {
+    backgroundColor: '#b5a8ed',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    width: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+  },
+  applyButtonText: {
     fontSize: 16,
-    color: 'white',
+    fontWeight: 'bold',
+    color: '#f7f7f7',
+  },
+  sendNewCodeButton: {
+    marginTop: 15,
+  },
+  sendNewCodeButtonText: {
+    fontSize: 14,
+    color: '#3498db',
+    textDecorationLine: 'underline',
+  },
+  goBackButton: {
+    marginTop: 15,
+  },
+  goBackButtonText: {
+    fontSize: 14,
+    color: '#3498db',
   },
 });
 
